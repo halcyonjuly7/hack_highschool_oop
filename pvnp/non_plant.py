@@ -12,4 +12,7 @@ class Non_Plant(Organism):
     def attack(self, plant):
         plant.take_damage(self._dmg)
 
+    def __str__(self):
+        return f"NP<hp:{self._hp}, dmg:{self._dmg}>"
+
 

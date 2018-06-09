@@ -3,6 +3,9 @@ class Node:
         self.val = value
         self.next = next
 
+    def __repr__(self):
+        return self.val
+
 
 class Queue:
     def __init__(self):
@@ -10,15 +13,16 @@ class Queue:
         self._head = None
         self._end = None
 
-
     def is_empty(self):
         return self._head is None
 
     def enqueue(self, data):
         new_node = Node(data)
         if self._head is None:
-            self._end = self._head = new_node
+            self._head = new_node
+            self._end = new_node
         else:
+            print(self._end)
             self._end.next(new_node)
             self._end = new_node
         self._size += 1
@@ -32,6 +36,10 @@ class Queue:
 
     def front(self):
         return self._head
+
+
+    def __repr__(self):
+        return self.front() if self.front() else "."
 
     def __str__(self):
         items = []

@@ -35,7 +35,7 @@ class Game:
         self._power_ups = Game._init_powerups()
 
     @staticmethod
-    def _create_board(height, width):
+    def _create_board(width, height):
         board = []
         for _ in range(height):
             row = []
@@ -95,17 +95,16 @@ class Game:
         self._board[row][col].enqueue(Plant())
 
     def _place_non_plant_waves(self, wave):
-
         target_col = self._board[wave.row][self.width - 1]
-        for _ in wave.num:
+        for _ in range(wave.num):
             target_col.enqueue(Non_Plant())
         self._non_plants += wave.num
 
     def place_wave(self):
-        current_wave = self.waves.head
-        self._place_non_plant_waves(current_wave)
+        current_wave = self.waves.front
+        self._place_non_plant_waves(current_wave.content)
         current_wave.next = None
-        self.waves.head = self.waves.head.next
+        self.waves.head = self.waves.front.next
         self.waves_num -= 1
         self._turn_number += 1
 
@@ -177,9 +176,9 @@ class Game:
 
 
     def run(self):
-        while not self._is_game_over and self.waves_num > 0 and self._non_plants > 0:
-            self.get_input()
+        while not self._is_game_over and self.waves_num > 0 and self._non_plants >= 0:
             self.run_turn()
+            self.get_input()
 
         if not self._is_game_over:
             print("You Won")
@@ -199,7 +198,7 @@ class Game:
     def run_turn(self):
         self._turn_number += 1
         self._weaken_powerups()
-        if self.waves.front():
+        if self.waves.front:
             self.place_wave()
         self.plant_turn()
         self.non_plant_turn()

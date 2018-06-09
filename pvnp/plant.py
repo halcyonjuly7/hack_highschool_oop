@@ -1,4 +1,4 @@
-from organisnm import Organism
+from organism import Organism
 
 class Plant(Organism):
     cost = 35
