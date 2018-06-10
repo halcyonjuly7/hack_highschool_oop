@@ -1,7 +1,7 @@
 from organism import Organism
 
 
-class Non_Plant(Organism):
+class NonPlant(Organism):
     worth = 20
 
     def __init__(self):
@@ -11,6 +11,14 @@ class Non_Plant(Organism):
 
     def attack(self, plant):
         plant.take_damage(self._dmg)
+
+
+    def get_health(self):
+        return self._hp
+
+
+    def __repr__(self):
+        return f"NP<hp:{self._hp}, dmg:{self._dmg}>"
 
     def __str__(self):
         return f"NP<hp:{self._hp}, dmg:{self._dmg}>"

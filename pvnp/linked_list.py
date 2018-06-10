@@ -16,7 +16,7 @@ class LinkedList:
 
 
         @property
-        def content(self):
+        def data(self):
             return self._content
 
         @property
@@ -40,8 +40,12 @@ class LinkedList:
 
 
     @property
-    def front(self):
+    def head(self):
         return self._head
+
+    @head.setter
+    def head(self, item):
+        self._head  = item
 
     @property
     def tail(self):
@@ -51,7 +55,7 @@ class LinkedList:
 
     def add_head(self, item):
         new_node = LinkedList.Node(item)
-        if self.front is None:
+        if self.head is None:
             self._tail = self._head = new_node
         else:
             new_node.next = self.head
@@ -59,13 +63,15 @@ class LinkedList:
 
     def add_tail(self, item):
         new_node = LinkedList.Node(item)
-        if self.front is None:
+        if self.head is None:
             self._tail = self._head = new_node
         else:
             self._tail.next = new_node
             self._tail = new_node
 
-
+    def remove_beginning(self):
+        if self.head:
+            self.head = self.head.next
 
     def add(self, item):
         self.add_tail(item)

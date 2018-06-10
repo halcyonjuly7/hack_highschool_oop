@@ -7,11 +7,15 @@ class Organism:
     def hp(self):
         return self._hp
 
+    @hp.setter
+    def hp(self, hp):
+        self._hp = hp
+
     @property
     def dmg(self):
         return self._dmg
 
     def take_damage(self, damage):
-        self.hp -= damage
+        self._hp -= damage
 
 

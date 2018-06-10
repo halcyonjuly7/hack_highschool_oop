@@ -7,7 +7,7 @@ class Node:
         return self.val
 
 
-class Queue:
+class _Queue:
     def __init__(self):
         self._size = 0
         self._head = None
@@ -16,14 +16,15 @@ class Queue:
     def is_empty(self):
         return self._head is None
 
+    def size(self):
+        return self._size
+
     def enqueue(self, data):
         new_node = Node(data)
         if self._head is None:
-            self._head = new_node
-            self._end = new_node
+            self._end = self._head = new_node
         else:
-            print(self._end)
-            self._end.next(new_node)
+            self._end.next = new_node
             self._end = new_node
         self._size += 1
     
@@ -32,10 +33,17 @@ class Queue:
             self._size -= 1
             node = self._head
             self._head = self._head.next
-            return node
+            return node.val
 
     def front(self):
-        return self._head
+        return self._head.val if self._head else None
+
+    def peek(self):
+        return self.front()
+
+    def combine(self, other_q):
+        while not other_q.is_empty():
+            self.enqueue(other_q.dequeue())
 
 
     def __repr__(self):

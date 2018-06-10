@@ -1,8 +1,8 @@
 from linked_list import LinkedList
-from queue import Queue
+from _queue import _Queue
 from stack import Stack
 from wave import Wave
-from non_plant import Non_Plant
+from non_plant import NonPlant
 from plant import Plant
 from card import Card
 import random
@@ -24,25 +24,15 @@ class Game:
             self.cash, self.height, self.width = [int(x) for x in f.readline().split(" ")]
             self.waves = LinkedList()
             self.waves_num = 0
-            for line in iter(f.readline, ""):
+            for line in f:
                 self.waves.add(Wave(*[int(x) for x in line.split(" ")]))
                 self.waves_num += 1
 
-        self._board = Game._create_board(self.width, self.height)
-        self._is_game_over = False
-        self._turn_number = 0
-        self._non_plants = 0
+        self._board = [[_Queue()for __ in range(self.width)]for _ in range(self.height)]
+        self.game_over = False
+        self._turn = 0
+        self.non_plants = 0
         self._power_ups = Game._init_powerups()
-
-    @staticmethod
-    def _create_board(width, height):
-        board = []
-        for _ in range(height):
-            row = []
-            for __ in range(width):
-                row.append(Queue())
-            board.append(row)
-        return board
 
 
     @staticmethod
@@ -54,59 +44,66 @@ class Game:
         return stack
 
     def draw(self):
-        print("Cash: $", self.cash, "\nWaves: ", self.waves_num, sep="")
-        s = " ".join([str(i) for i in range(self.width - 1)])
-        print(" ", s)
+        # def draw(self):
+        print("Cash: $", self.cash, "\nWaves: ", self.waves_num, sep='')
+        s = '  '.join([str(i) for i in range(self.width - 1)])
+        print('  ', s)
         for row in range(self.height):
             s = []
             for col in range(self.width):
                 if self.is_plant(row, col):
-                    char = "P"
+                    char = 'P'
                 elif self.is_nonplant(row, col):
-                    size = self.board[row][col].size()
+                    size = self._board[row][col].size()
                     char = str(size) if size < 10 else "#"
                 else:
-                    char = "."
+                    char = '.'
                 s.append(char)
-            print(row, " ", " ".join(s), "\n", sep="")
+            print(row, '  ', '  '.join(s), '\n', sep='')
         print()
 
     def is_plant(self, row, col):
-        return isinstance(self._board[row][col].front(), Plant)
+        front = self._board[row][col].front()
+        if front is not None:
+            return isinstance(front, Plant)
+        return False
 
     def is_nonplant(self, row, col):
-        return isinstance(self._board[row][col].front(), Non_Plant)
+        front = self._board[row][col].front()
+        if front is not None:
+            return isinstance(front, NonPlant)
+        return False
 
     def remove(self, row, col):
-        self._board[row][col].dequeue()
-
+        item = self._board[row][col].dequeue()
+        if isinstance(item, NonPlant):
+            self.cash += item.worth
     def place_nonplant(self, row):
-        self._board[row][self._width - 1].enqueue(Non_Plant())
-        self._non_plants += 1
+        self._board[row][self.width - 1].enqueue(NonPlant())
+        self.non_plants += 1
 
     def place_plant(self, row,col):
-        if not self._board[row][col].is_empty() and  col >= self.width:
+        if not self._board[row][col].is_empty() or col >= self.width:
             print("cannot place plant there")
             return
         if not self.cash >= Plant.cost:
             print("you don't have enough cash")
             return
-
+        self.cash -= Plant.cost
         self._board[row][col].enqueue(Plant())
 
-    def _place_non_plant_waves(self, wave):
-        target_col = self._board[wave.row][self.width - 1]
-        for _ in range(wave.num):
-            target_col.enqueue(Non_Plant())
-        self._non_plants += wave.num
 
     def place_wave(self):
-        current_wave = self.waves.front
-        self._place_non_plant_waves(current_wave.content)
-        current_wave.next = None
-        self.waves.head = self.waves.front.next
-        self.waves_num -= 1
-        self._turn_number += 1
+        curr = self.waves.head
+        while curr != None:
+            if (curr.data.wave_num > self._turn):
+                break
+            if (curr.data.wave_num == self._turn):
+                for i in range(curr.data.num):
+                    self.place_nonplant(curr.data.row);
+                curr = curr.next
+                self.waves.remove_beginning()
+                self.waves_num -= 1
 
 
     def plant_turn(self):
@@ -116,14 +113,13 @@ class Game:
                     current_plant = self._board[row][col].front()
                     for col_after_plant in range(col, self.width):
                         if self.is_nonplant(row, col_after_plant):
-                            current_non_plant = self._board[row][col_after_plant].front()
-                            current_plant.attack(current_non_plant)
-                            if current_non_plant.hp <= 0:
+                            current_nonplant = self._board[row][col_after_plant].front()
+                            current_plant.attack(current_nonplant)
+                            if current_nonplant.hp <= 0:
                                 self.remove(row, col_after_plant)
-                                self._non_plants =- 1
-                            break
+                                self.non_plants -= 1
 
-    def _move_non_plants(self, _from, to):
+    def _move_nonplants(self, _from, to):
         from_queue = self._board[_from[0]][_from[1]]
         to_queue = self._board[to[0]][to[1]]
         while not from_queue.is_empty():
@@ -131,56 +127,44 @@ class Game:
 
 
 
-    # def non_plant_turn(self):
-    #     for row in range(self.height):
-    #         for col in range(self.width):
-    #             if self.is_nonplant(row, col):
-    #                 current_non_plant = self._board[row][col]
-    #                 for before_non_plant_col in range(col, -1, -1):
-    #                     if self.is_plant(row, before_non_plant_col):
-    #                         current_plant = self._board[row][before_non_plant_col]
-    #                         current_non_plant.attack(current_plant)
-    #                         if current_plant.hp <= 0:
-    #                             self.remove(row, col)
-    #                             if before_non_plant_col - 1 != 0:
-    #                                 self._move_non_plants((row, before_non_plant_col),
-    #                                                       (row, before_non_plant_col - 1))
-    #                             else:
-    #                                 self._is_game_over = True
-    #                                 return
-    #                         break
 
+    def _nonplant_attack(self, NonPlant, plant):
 
-    def _non_plant_attack(self, non_plant, plant):
-        plant.hp -= non_plant.size() * Non_Plant.dmg
+        plant.hp -= (NonPlant.size() * NonPlant.front().dmg)
         return plant.hp <= 0
 
 
 
-    def non_plant_turn(self):
+    def nonplant_turn(self):
         for row in range(self.height):
             for col in range(self.width):
                 if self.is_nonplant(row, col):
-                    current_non_plant = self._board[row][col]
-                    before_non_plant_col = col-1
-                    if self.is_plant(row, before_non_plant_col):
-                        if self._non_plant_attack(current_non_plant, self._board[row][before_non_plant_col]):
-                            self.remove(row, col)
-                            if before_non_plant_col - 1 != 0:
-                                self._move_non_plants((row, before_non_plant_col),
-                                                      (row, before_non_plant_col - 1))
-                            else:
-                                self._is_game_over = True
-                                return
-                        break
+                    current_nonplant = self._board[row][col]
+                    before_nonplant_col = col - 1
+                    if before_nonplant_col >= 0:
+                        if not self.is_plant(row, before_nonplant_col):
+                            self._move_nonplants((row, col),
+                                                 (row, before_nonplant_col))
+                    else:
+                        self.game_over = True
+                        return
+
+                    if self.is_plant(row, before_nonplant_col):
+                        if self._nonplant_attack(current_nonplant, self._board[row][before_nonplant_col].front()):
+                            self.remove(row, before_nonplant_col)
 
 
     def run(self):
-        while not self._is_game_over and self.waves_num > 0 and self._non_plants >= 0:
-            self.run_turn()
+        self.place_wave()
+        self.draw()
+        self.get_input()
+        self.run_turn()
+        while not self.game_over  and self.non_plants > 0:
+            self.draw()
             self.get_input()
+            self.run_turn()
 
-        if not self._is_game_over:
+        if not self.game_over:
             print("You Won")
         else:
             print("You Lost")
@@ -196,13 +180,11 @@ class Game:
 
 
     def run_turn(self):
-        self._turn_number += 1
-        self._weaken_powerups()
-        if self.waves.front:
-            self.place_wave()
         self.plant_turn()
-        self.non_plant_turn()
-        self.draw()
+        self.nonplant_turn()
+        self._weaken_powerups()
+        self._turn += 1
+        self.place_wave()
 
 
     def draw_card(self):
@@ -233,7 +215,7 @@ class Game:
                         self.draw_card()
                         break
                     elif (ui.lower() == "q"):
-                        self.over = True
+                        self.game_over = True
                         break
                     else:
                         print(f"Invalid Input {ui}")
@@ -246,17 +228,3 @@ class Game:
                         print(f"Invalid Input {ui}")
             else:
                 break
-
-
-
-
-
-
-
-
-
-
-
-
-
-
